@@ -12,13 +12,11 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * It implements B-Tree. See http://en.wikipedia.org/wiki/B-tree. It is
- * compatible with standard {@link java.util.Set}. It uses an Array to reduce
- * overhead of memory allocation of LinkedList that is easier to handle the
- * overflow and join/merge operation. Because it uses an array when it adds a
- * key it should shift all keys larger than the key. If node will be full it
- * splits node first then adds the key later to reduce shift operation. It uses
- * stacks to avoid recursive calls.
+ * It implements B-Tree. See http://en.wikipedia.org/wiki/B-tree. It is compatible with standard {@link java.util.Set}.
+ * It uses an Array to reduce overhead of memory allocation of LinkedList that is easier to handle the overflow and
+ * join/merge operation. Because it uses an array when it adds a key it should shift all keys larger than the key. If
+ * node will be full it splits node first then adds the key later to reduce shift operation. It uses stacks to avoid
+ * recursive calls.
  * 
  * @author songduk.park cororok@gmail.com
  */
@@ -67,7 +65,6 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 
 		Node node = root;
 		int index = 0;
-
 		while (true) {
 			index = node.indexOfGreatestLessThan(key);
 			if (index < 0)
@@ -81,7 +78,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 
 	@Override
 	public boolean isEmpty() {
-		return size == 0 ? true : false;
+		return size == 0;
 	}
 
 	@Override
@@ -99,7 +96,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 			return false;
 
 		K key = (K) (keyObj);
-		return findNode(this.root, key) == null ? false : true;
+		return findNode(this.root, key) != null;
 	}
 
 	@Override
@@ -120,7 +117,6 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	private Node findNode(Node fromNode, K key) {
 		Node node = fromNode;
 		int index = 0;
-
 		while (true) {
 			index = node.indexOfGreatestLessThan(key);
 			if (index < 0)
@@ -134,12 +130,11 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 
 	@Override
 	public boolean add(K newKey) {
-		return (returnExistingKeyOrAdd(newKey) == null) ? true : false;
+		return returnExistingKeyOrAdd(newKey) == null;
 	}
 
 	/**
-	 * if the same key exists return the key and does not add a newKey. It is
-	 * used to replace old key
+	 * if the same key exists return the key and does not add a newKey. It is used to replace old key
 	 * 
 	 * @param newKey
 	 * @return return old key if the key exists or add newKey and return null
@@ -147,40 +142,42 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	K returnExistingKeyOrAdd(K newKey) {
 		addStack.reset();
 		int indexOfGreatestLessThan = 0;
-
 		Node currentNode = root;
 		while (true) { // build a stack until leap
-			indexOfGreatestLessThan = currentNode
-					.indexOfGreatestLessThan(newKey);
+			indexOfGreatestLessThan = currentNode.indexOfGreatestLessThan(newKey);
 			if (indexOfGreatestLessThan < 0) {
 				// fond old one
-				return currentNode.keyAt(currentNode
-						.convertToRealIndex(indexOfGreatestLessThan));
+				return currentNode.keyAt(currentNode.convertToRealIndex(indexOfGreatestLessThan));
 			}
-
 			addStack.add(currentNode);
 			if (currentNode.isLeaf())
 				break;
-
 			currentNode = currentNode.childAt(indexOfGreatestLessThan);
 		}
 
 		++size;
 		++changed;
-		// add it from the bottom
+		addFromTheBotton(newKey);
+		return null;
+	}
+
+	private void addFromTheBotton(K newKey) {
+		Node currentNode = null;
 		WrappedNode wrappedNode = new WrappedNode();
 		while (addStack.size() > 0) {
 			currentNode = addStack.pop();
 			wrappedNode = currentNode.add(newKey, wrappedNode.node);
-
-			if (wrappedNode == null)// no overflow
-				return null;
-
+			if (wrappedNode == null) // no overflow
+				return;
 			// was overflowed so need to add it to the parent.
 			newKey = wrappedNode.key;
 		}
 
 		// if top has a node it has to create a new root
+		createNewRoot(currentNode, wrappedNode);
+	}
+
+	private void createNewRoot(Node currentNode, WrappedNode wrappedNode) {
 		Node newRoot = new Node();
 		newRoot.setKeyAt(0, wrappedNode.key);
 		newRoot.noOfKeys = 1;
@@ -191,7 +188,6 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 
 		this.root = newRoot;
 		++height;
-		return null;
 	}
 
 	/**
@@ -202,14 +198,11 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		deleteStack.reset();
 		int indexOfGreatestLessThan = 0;
 		Node currentNode = root;
-
 		while (true) {
 			indexOfGreatestLessThan = currentNode.indexOfGreatestLessThan(key);
 			WrappedNode wrapper = new WrappedNode(currentNode);
-
 			if (indexOfGreatestLessThan < 0) {// found
-				wrapper.index = currentNode
-						.convertToRealIndex(indexOfGreatestLessThan);
+				wrapper.index = currentNode.convertToRealIndex(indexOfGreatestLessThan);
 				deleteStack.add(wrapper);
 
 				// if the found key is leaf, delete the key.
@@ -229,7 +222,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 			currentNode = currentNode.childAt(indexOfGreatestLessThan);
 		}
 
-		if (deleteStack.size() == 1)// root
+		if (deleteStack.size() == 1) // root
 			return true;
 
 		merge();
@@ -237,8 +230,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	}
 
 	/**
-	 * replace a key in currentNode with the least key or the largest key in the
-	 * leaf. and delete the key in the leaf.
+	 * replace a key in currentNode with the least key or the largest key in the leaf. and delete the key in the leaf.
 	 * 
 	 * @param currentNode
 	 * @param indexToDelete
@@ -264,74 +256,29 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	}
 
 	/**
-	 * merges insufficient nodes from down to top. It doesn't use recursive call
-	 * but uses a stack.
+	 * merges insufficient nodes from down to top. It doesn't use recursive call but uses a stack.
 	 */
 	private void merge() {
 		WrappedNode current = deleteStack.pop();
 		WrappedNode parent = null;
 		while (deleteStack.size() > 0) {
 			parent = deleteStack.pop();
-
 			if (current.node.isInsufficientKey()) {
 				WrappedNode borrow = getBiggerChild(parent.node, parent.index);
+				boolean isRight = borrow.index == 1;
 
-				boolean isRight = borrow.index == 1 ? true : false;
-
-				// join
-				if (borrow.node.noOfKeys + current.node.noOfKeys < MAX_KEY) {
+				if (canJoin(borrow, current)) {
 					if (isRight) {
-						join(current.node, parent.node, parent.index,
-								borrow.node);
+						join(current.node, parent.node, parent.index, borrow.node);
 					} else {
-						join(borrow.node, parent.node, parent.index - 1,
-								current.node);
+						join(borrow.node, parent.node, parent.index - 1, current.node);
 					}
-				} else { // can borrow
-					if (isRight) {
-						// shrink right key
-						int parentIndex = parent.index;
-
-						current.node.setKeyAt(current.node.noOfKeys,
-								parent.node.keyAt(parentIndex));
-						++current.node.noOfKeys;
-
-						parent.node.setKeyAt(parentIndex,
-								borrow.node.removeFirstKey());
-
-						if (borrow.node.isLeaf() == false) {
-							current.node.setChildAt(current.node.noOfChildren,
-									borrow.node.removeFirstChild());
-							++current.node.noOfChildren;
-
-						}
-					} else {
-						// shrink left keys
-						int parentIndex = parent.index - 1;
-
-						ArrayUtil.shiftRight(current.node.keys, 0,
-								current.node.noOfKeys);
-						current.node
-								.setKeyAt(0, parent.node.keyAt(parentIndex));
-						++current.node.noOfKeys;
-
-						parent.node.setKeyAt(parentIndex,
-								borrow.node.removeLastKey());
-
-						if (borrow.node.isLeaf() == false) {
-							ArrayUtil.shiftRight(current.node.children, 0,
-									current.node.noOfChildren);
-							current.node.setChildAt(0,
-									borrow.node.removeLastChild());
-
-							++current.node.noOfChildren;
-						}
-					}
+				} else {
+					borrow(current, parent, borrow, isRight);
 					return;
 				}
 				current = parent;
 			} else {
-				//
 				break;
 			}
 		}
@@ -340,6 +287,45 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		if (parent.node.noOfKeys == 0 && parent.node.isLeaf() == false) {
 			this.root = parent.node.childAt(0);
 			--height;
+		}
+	}
+
+	private boolean canJoin(WrappedNode borrow, WrappedNode node) {
+		return borrow.node.noOfKeys + node.node.noOfKeys < MAX_KEY;
+	}
+
+	private void borrow(WrappedNode current, WrappedNode parent, WrappedNode borrow, boolean isRight) {
+		if (isRight) {
+			shrinkRightKeys(current, parent, borrow);
+		} else {
+			shrinkLeftKeys(current, parent, borrow);
+		}
+	}
+
+	private void shrinkLeftKeys(WrappedNode current, WrappedNode parent, WrappedNode borrow) {
+		int parentIndex = parent.index - 1;
+		ArrayUtil.shiftRight(current.node.keys, 0, current.node.noOfKeys);
+		current.node.setKeyAt(0, parent.node.keyAt(parentIndex));
+		++current.node.noOfKeys;
+
+		parent.node.setKeyAt(parentIndex, borrow.node.removeLastKey());
+		if (borrow.node.isLeaf() == false) {
+			ArrayUtil.shiftRight(current.node.children, 0, current.node.noOfChildren);
+			current.node.setChildAt(0, borrow.node.removeLastChild());
+
+			++current.node.noOfChildren;
+		}
+	}
+
+	private void shrinkRightKeys(WrappedNode current, WrappedNode parent, WrappedNode borrow) {
+		int parentIndex = parent.index;
+		current.node.setKeyAt(current.node.noOfKeys, parent.node.keyAt(parentIndex));
+		++current.node.noOfKeys;
+
+		parent.node.setKeyAt(parentIndex, borrow.node.removeFirstKey());
+		if (borrow.node.isLeaf() == false) {
+			current.node.setChildAt(current.node.noOfChildren, borrow.node.removeFirstChild());
+			++current.node.noOfChildren;
 		}
 	}
 
@@ -359,14 +345,12 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	 * choose a bigger child node between left and right child of key at index.
 	 * 
 	 * @param parent
-	 * @param index
-	 *            index of the key to find its left or right child.
+	 * @param index index of the key to find its left or right child.
 	 * @return left or right child node
 	 */
 	private WrappedNode getBiggerChild(Node parent, int index) {
 		Node left = null;
 		Node right = null;
-
 		WrappedNode wrappedNode = new WrappedNode();
 		if (index > 0)
 			left = parent.childAt(index - 1);
@@ -397,8 +381,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	 * appends right node to left node
 	 * 
 	 * @param left
-	 * @param center
-	 *            parent node between left and right
+	 * @param center parent node between left and right
 	 * @param centerIndex
 	 * @param right
 	 */
@@ -406,20 +389,25 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		left.setKeyAt(left.noOfKeys, center.keyAt(centerIndex));
 		++left.noOfKeys;
 
-		// keys
-		for (int i = 0; i < right.noOfKeys; i++) {
-			left.setKeyAt(i + left.noOfKeys, right.keyAt(i));
-		}
-		left.noOfKeys += right.noOfKeys;
+		joinKeys(left, right);
+		joinChildren(left, right);
 
-		// children
+		// shrink parent
+		center.shrink(centerIndex + 1);
+	}
+
+	private void joinChildren(Node left, Node right) {
 		for (int i = 0; i < right.noOfChildren; i++) {
 			left.setChildAt(i + left.noOfChildren, right.childAt(i));
 		}
 		left.noOfChildren += right.noOfChildren;
+	}
 
-		// shrink parent
-		center.shrink(centerIndex + 1);
+	private void joinKeys(Node left, Node right) {
+		for (int i = 0; i < right.noOfKeys; i++) {
+			left.setKeyAt(i + left.noOfKeys, right.keyAt(i));
+		}
+		left.noOfKeys += right.noOfKeys;
 	}
 
 	/**
@@ -445,8 +433,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	/**
 	 * find the minimum node from a node.
 	 * 
-	 * @param node
-	 *            starting point
+	 * @param node starting point
 	 * @return the minimum node
 	 */
 	private Node findMinNode(Node node) {
@@ -486,7 +473,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 
 		@Override
 		public boolean hasNext() {
-			return currentKey != null ? true : false;
+			return currentKey != null;
 		}
 
 		/**
@@ -504,7 +491,6 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 						currentKey = null;
 						break;
 					}
-
 					wrappedNode = stack.pop();
 					wrappedNode.check = true;
 				} else if (wrappedNode.check) {
@@ -514,25 +500,18 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 							currentKey = null;
 							break;
 						}
-
 						wrappedNode = stack.pop();
 						wrappedNode.check = true;
 					} else { // return one by one in the current node
-						currentKey = wrappedNode.node
-								.keyAt(wrappedNode.index++);
-
+						currentKey = wrappedNode.node.keyAt(wrappedNode.index++);
 						stack.add(wrappedNode);
-
-						WrappedNode temp = new WrappedNode(
-								wrappedNode.node.childAt(wrappedNode.index));
+						WrappedNode temp = new WrappedNode(wrappedNode.node.childAt(wrappedNode.index));
 						wrappedNode = temp;
 						break;
 					}
 				} else {
 					stack.add(wrappedNode);
-
-					WrappedNode temp = new WrappedNode(
-							wrappedNode.node.childAt(0));
+					WrappedNode temp = new WrappedNode(wrappedNode.node.childAt(0));
 					wrappedNode = temp;
 				}
 			} while (true);
@@ -580,9 +559,8 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 	}
 
 	/**
-	 * Keeps keys in an array rather than linked list to reduce memory use.
-	 * Number of children is one bigger than keys because child can be placed on
-	 * the left and right side of the parent.
+	 * Keeps keys in an array rather than linked list to reduce memory use. Number of children is one bigger than keys
+	 * because child can be placed on the left and right side of the parent.
 	 */
 	class Node {
 		int id;
@@ -598,8 +576,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		}
 
 		public void initChildren() {
-			this.children = (Node[]) Array.newInstance(this.getClass(),
-					MAX_CHILDREN);
+			this.children = (Node[]) Array.newInstance(this.getClass(), MAX_CHILDREN);
 		}
 
 		/**
@@ -608,11 +585,11 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		 * @return
 		 */
 		public boolean isInsufficientKey() {
-			return noOfKeys < HALF_KEY ? true : false;
+			return noOfKeys < HALF_KEY;
 		}
 
 		boolean isValidToDeleteKey() {
-			return (noOfKeys == 0) ? false : true;
+			return noOfKeys != 0;
 		}
 
 		/**
@@ -700,11 +677,11 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		}
 
 		public boolean isLeaf() {
-			return noOfChildren == 0 ? true : false;
+			return noOfChildren == 0;
 		}
 
 		public boolean isFull() {
-			return noOfKeys == MAX_KEY ? true : false;
+			return noOfKeys == MAX_KEY;
 		}
 
 		/**
@@ -723,12 +700,10 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		/**
 		 * @param key
 		 * @param childNode
-		 * @return null it it is not full or new right node separated because of
-		 *         insertion.
+		 * @return null it it is not full or new right node separated because of insertion.
 		 */
 		public WrappedNode add(K key, Node childNode) {
 			int indexOfNew = indexOfGreatestLessThan(key);
-
 			if (isFull())
 				return split(key, childNode, indexOfNew);
 
@@ -739,18 +714,16 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 			ArrayUtil.shiftRight(keys, indexOfNew, noOfKeys);
 			keys[indexOfNew] = key;
 			++noOfKeys;
-
 			return null;
 		}
 
 		/**
-		 * split current node to left and right node which is created newly and
-		 * add key and childNode to either left or right.
+		 * split current node to left and right node which is created newly and add key and childNode to either left or
+		 * right.
 		 * 
 		 * @param key
 		 * @param childNode
-		 * @param indexOfNew
-		 *            index where key and childNode will be placed.
+		 * @param indexOfNew index where key and childNode will be placed.
 		 * @return new right side node which will be added to the parent.
 		 */
 		private WrappedNode split(K key, Node childNode, int indexOfNew) {
@@ -765,21 +738,18 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		 * If a key exists returns (index - size) that is negative value.
 		 * 
 		 * @param key
-		 * @return negative value if there is the key or index of the greatest
-		 *         but smaller key than the key.
+		 * @return negative value if there is the key or index of the greatest but smaller key than the key.
 		 */
 		private int indexOfGreatestLessThan(K key) {
 			int left = 0;
 			int right = noOfKeys - 1;
-
 			// use binary search
 			while (true) {
 				if (left > right) {
 					return left;
 				}
-
 				int middle = (left + right) / 2;
-				int diff = key.compareTo(keys[middle]);
+				int diff = key.compareTo(keys[middle]); // Arrays.binarySearch(keys, key) will throw NullPointException
 				if (diff == 0)
 					return middle - MAX_KEY; // exists
 				else if (diff > 0)
@@ -800,41 +770,30 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		}
 
 		/**
-		 * split child before it adds a new key because it knows it will be
-		 * full.
+		 * split child before it adds a new key because it knows it will be full.
 		 * 
 		 * @param indexOfNew
 		 * @param seperatedNode
 		 * @param newChild
 		 */
-		private void splitChildren(int indexOfNew, Node seperatedNode,
-				Node newChild) {
+		private void splitChildren(int indexOfNew, Node seperatedNode, Node newChild) {
 			seperatedNode.initChildren();
-
 			if (indexOfNew == CENTER_CHILDREN) {
 				// right
 				seperatedNode.children[0] = newChild;
-				ArrayUtil.moveTo(children, seperatedNode.children,
-						CENTER_CHILDREN + 1, MAX_KEY + 1, 1);
-
+				ArrayUtil.moveTo(children, seperatedNode.children, CENTER_CHILDREN + 1, MAX_KEY + 1, 1);
 			} else if (indexOfNew < CENTER_CHILDREN) {
 				// right
-				ArrayUtil.moveTo(children, seperatedNode.children,
-						CENTER_CHILDREN, MAX_CHILDREN, 0);
-
+				ArrayUtil.moveTo(children, seperatedNode.children, CENTER_CHILDREN, MAX_CHILDREN, 0);
 				// left
 				ArrayUtil.shiftRight(children, indexOfNew + 1, CENTER_CHILDREN);
-
 				children[indexOfNew + 1] = newChild;
 			} else {
 				// right
-				ArrayUtil.moveTo(children, seperatedNode.children,
-						CENTER_CHILDREN + 1, indexOfNew + 1, 0);
-
+				ArrayUtil.moveTo(children, seperatedNode.children, CENTER_CHILDREN + 1, indexOfNew + 1, 0);
 				int index = indexOfNew - CENTER_CHILDREN;
 				seperatedNode.children[index] = newChild;
-				ArrayUtil.moveTo(children, seperatedNode.children,
-						indexOfNew + 1, MAX_CHILDREN, ++index);
+				ArrayUtil.moveTo(children, seperatedNode.children, indexOfNew + 1, MAX_CHILDREN, ++index);
 			}
 			noOfChildren = seperatedNode.noOfChildren = HALF_CHILDREN;
 		}
@@ -847,7 +806,6 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		private WrappedNode splitKeys(K key, int indexOfNew) {
 			WrappedNode wrappedNode = new WrappedNode();
 			wrappedNode.node = new Node();
-
 			if (indexOfNew <= CENTER_KEY) {
 				wrappedNode.key = keys[CENTER_KEY];
 				// left - shift
@@ -862,17 +820,12 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 			} else {
 				wrappedNode.key = keys[CENTER_CHILDREN];
 				keys[CENTER_CHILDREN] = null;
-
 				// right
 				int size = (indexOfNew - CENTER_CHILDREN - 1);
-				ArrayUtil.moveTo(keys, wrappedNode.node.keys,
-						CENTER_CHILDREN + 1, indexOfNew, 0);
+				ArrayUtil.moveTo(keys, wrappedNode.node.keys, CENTER_CHILDREN + 1, indexOfNew, 0);
 				wrappedNode.node.keys[size] = key;
-
-				ArrayUtil.moveTo(keys, wrappedNode.node.keys, indexOfNew,
-						noOfKeys, ++size);
+				ArrayUtil.moveTo(keys, wrappedNode.node.keys, indexOfNew, noOfKeys, ++size);
 			}
-
 			noOfKeys = wrappedNode.node.noOfKeys = HALF_KEY;
 			return wrappedNode;
 		}
@@ -882,8 +835,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		}
 
 		/**
-		 * move key and child one left from 'from' to the end and reduce one
-		 * size.
+		 * move key and child one left from 'from' to the end and reduce one size.
 		 * 
 		 * @param from
 		 */
@@ -910,11 +862,7 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 		 * debug purpose
 		 */
 		void print(int depth) {
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < depth * 2; i++) {
-				sb.append(' ');
-			}
-			String indent = sb.toString();
+			String indent = makeIndent(depth);
 			System.out.print(indent + "(Id: " + id + ")" + " keys=");
 			for (int i = 0; i < noOfKeys; i++) {
 				System.out.print(keys[i]);
@@ -929,6 +877,15 @@ public class BTreeSet<K extends Comparable<K>> extends AbstractSet<K> {
 				}
 			} else
 				System.out.println();
+		}
+
+		private String makeIndent(int depth) {
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < depth * 2; i++) {
+				sb.append(' ');
+			}
+			String indent = sb.toString();
+			return indent;
 		}
 
 		/**

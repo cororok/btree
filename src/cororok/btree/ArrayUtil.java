@@ -13,8 +13,8 @@ package cororok.btree;
  */
 public class ArrayUtil {
 	/**
-	 * overwrites left cell with right cell. If arr='01234', startIndex=1 and
-	 * endIndex=3 then arr will be <12>234 (without <>).
+	 * overwrites left cell with right cell. If arr='01234', startIndex=1 and endIndex=3 then arr will be <12>234
+	 * (without <>).
 	 * 
 	 * @param arr
 	 * @param startIndex
@@ -27,8 +27,8 @@ public class ArrayUtil {
 	}
 
 	/**
-	 * overwrites right cell with left cell. If arr='01234', startIndex=1 and
-	 * endIndex=3 then arr will be 01<12>4 (without <>).
+	 * overwrites right cell with left cell. If arr='01234', startIndex=1 and endIndex=3 then arr will be 01<12>4
+	 * (without <>).
 	 * 
 	 * @param arr
 	 * @param startIndex
@@ -41,9 +41,8 @@ public class ArrayUtil {
 	}
 
 	/**
-	 * cuts and moves cells to target and overwrites target. If it calls
-	 * ArrayUtil.moveTo(01234, abcde, 1, 3, 2) then src will be 0<NN>34 (
-	 * N=null, without <>) and target will be ab<12>e (without <>)
+	 * cuts and moves cells to target and overwrites target. If it calls ArrayUtil.moveTo(01234, abcde, 1, 3, 2) then
+	 * src will be 0<NN>34 ( N=null, without <>) and target will be ab<12>e (without <>)
 	 * 
 	 * @param src
 	 * @param target
@@ -51,10 +50,8 @@ public class ArrayUtil {
 	 * @param endIndex
 	 * @param newStartIndex
 	 */
-	public static void moveTo(Object[] src, Object[] target, int startIndex,
-			int endIndex, int newStartIndex) {
-		System.arraycopy(src, startIndex, target, newStartIndex, endIndex
-				- startIndex);
+	public static void moveTo(Object[] src, Object[] target, int startIndex, int endIndex, int newStartIndex) {
+		System.arraycopy(src, startIndex, target, newStartIndex, endIndex - startIndex);
 		for (int i = startIndex; i < endIndex; i++) {
 			src[i] = null;
 		}

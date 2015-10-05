@@ -12,8 +12,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * simple class using {@link java.util.concurrent.locks.ReentrantReadWriteLock}
- * to support concurrent multiple reads and single write.
+ * simple class using {@link java.util.concurrent.locks.ReentrantReadWriteLock} to support concurrent multiple reads and
+ * single write.
  * 
  * @author songduk.park cororok@gmail.com
  * 

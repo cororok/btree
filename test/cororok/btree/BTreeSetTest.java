@@ -117,8 +117,7 @@ public class BTreeSetTest {
 			int intList = listItr.next();
 			int intSet = setItr.next();
 			if (intList != intSet) {
-				System.out.println("wrong iterator " + intList + " vs "
-						+ intSet);
+				System.out.println("wrong iterator " + intList + " vs " + intSet);
 				return false;
 			}
 		}

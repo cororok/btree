@@ -11,8 +11,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * It is compatible with standard {@link java.util.Map}. It uses a Set using
- * B-Tree.
+ * It is compatible with standard {@link java.util.Map}. It uses a Set using B-Tree.
  * 
  * @author songduk.park cororok@gmail.com
  * 
@@ -49,7 +48,6 @@ public class BTreeMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 	public V get(Object key) {
 		reuseEntity.key = (K) key;
 		KVEntity<K, V> oldEntity = set.get(reuseEntity);
-
 		return oldEntity == null ? null : oldEntity.value;
 	}
 
@@ -60,12 +58,11 @@ public class BTreeMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 
 		if (oldEntity != null && set.remove(reuseEntity))
 			return oldEntity.value;
-		else
-			return null;
+
+		return null;
 	}
 
-	class KVEntity<K extends Comparable<K>, V> implements
-			Comparable<KVEntity<K, V>>, java.util.Map.Entry<K, V> {
+	class KVEntity<K extends Comparable<K>, V> implements Comparable<KVEntity<K, V>>, java.util.Map.Entry<K, V> {
 		K key;
 		V value;
 
@@ -103,7 +100,7 @@ public class BTreeMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 				return false;
 
 			KVEntity<K, V> other = (KVEntity<K, V>) obj;
-			return (compareTo(other) == 1) ? true : false;
+			return compareTo(other) == 1;
 		}
 	}
 
